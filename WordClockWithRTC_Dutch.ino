@@ -15,15 +15,6 @@ by default and the timing could be wrong.
 #define DS3231_I2C_ADDRESS 0x68
 #define waitingtime 100
 #include <math.h>
-int buttonState1;           
-int buttonState2;           
-int lastButtonState1 = LOW;
-int lastButtonState2 = LOW;
-unsigned long lastDebounceTime1 = 0;
-unsigned long lastDebounceTime2 = 0;
-unsigned long debounceDelay1 = 100; 
-unsigned long debounceDelay2 = 100; 
-
 
 // Display output pin assignments#define MTIEN      Display1=Display1 | (1<<0)  
 #define MTIEN      Display1=Display1 | (1<<0)  
@@ -178,7 +169,7 @@ void displaytime(void){
     case 9: NEGEN;      break;
     case 10: HTIEN;     break;
     case 11: ELF;   break;
-    case 12: ;   break;
+    case 12: TWAALF;   break;
     }
    UUR;
   }
@@ -214,7 +205,7 @@ void displaytime(void){
         case 1: TWEE;      break;
         case 2: DRIE;    break;
         case 3: VIER;     break;
-        case 4: MVIJF;    break;
+        case 4: HVIJF;    break;
         case 5: ZES;      break;
         case 6: ZEVEN;    break;
         case 7: ACHT;    break;
@@ -234,7 +225,7 @@ void displaytime(void){
         case 1: TWEE;      break;
         case 2: DRIE;    break;
         case 3: VIER;     break;
-        case 4: MVIJF;    break;
+        case 4: HVIJF;    break;
         case 5: ZES;      break;
         case 6: ZEVEN;    break;
         case 7: ACHT;    break;
@@ -331,19 +322,20 @@ void incrementtime(void) {
 //**************************main loop**************************
 void loop(void) {
   
-  ledsoff();
   runAllTime();
-  ledsoff();
+  displaytime();
+  analogWrite(EnablePin, 254);
    while(1)
    {
-     int reading1 = digitalRead(FWDButtonPin);
-  int reading2 = digitalRead(REVButtonPin);
+int reading1 = digitalRead(FWDButtonPin);
+int reading2 = digitalRead(REVButtonPin);
   // heart of the timer - keep looking at the millisecond timer on the Arduino
   // and increment the seconds counter every 1000 ms
   if ( millis() - msTick > 999) {
     msTick = millis();
     second++;   
   }
+
   if (second == 60) 
   {
     incrementtime();
@@ -352,55 +344,35 @@ void loop(void) {
   }
 
   // When Forward button is pressed ==> 
-  if (reading1 != lastButtonState1) 
-  {
-  lastDebounceTime1 = millis();
-  }
-
-  if ((millis() - lastDebounceTime1) > debounceDelay1) 
-  {
-    if (reading1 != buttonState1) 
-  {
-    buttonState1 = reading1;
-    if (buttonState1 == HIGH) 
+   if ( (reading1 ==0 )) 
     {
-    minute = (((minute/5)*5) +7);  //Current time + about 3 minutes (plus)
-    second = 0;
-    incrementtime();
+    minute = (((minute/5)*5) +7); //Current time + 7 minutes (minus)
+    second = 0; 
     second++; 
-    set_time();  //send time to getRTCTime //When you press this button the time is updated on the RTC.
+    incrementtime();
+    set_time(); 
     displaytime();
     pulseLEDButton();
- 
-    }
-    }
-  }
 
+    }
 
   // When Reverse button is pressed 
-  if (reading2 != lastButtonState2) 
-  {
-  lastDebounceTime2 = millis();
-  }
-    if ((millis() - lastDebounceTime2) > debounceDelay2) {
-    if (reading2 != buttonState2) 
-  {
-      buttonState2 = reading2;
-      if (buttonState2 == HIGH) 
+   
+   if ( (reading2 ==0 )) 
     {
-    minute = (((minute/5)*5) -5); //Current time - 5 minutes (minus)
+    minute = (((minute/5)*5) -5); //Current time - 3 minutes (minus)
     second = 0; 
-    if (minute < 0) { minute = 55;  if (--hh24 <0) hh24 = 12; } 
+    if (minute < 0) { 
+      minute = 57; 
+      if ((--hh24) <0) hh24 = 12;
+    } 
     incrementtime();
     second++; 
     set_time(); 
     displaytime();
     pulseLEDButton();
     }
-    }
-  }
-  lastButtonState1 = reading1;
-  lastButtonState2 = reading2;
+
    }
 
 } //end of loop     
@@ -448,58 +420,50 @@ byte bcdToDec(byte val)
 }
 
 void runAllTime ()
-{
-  ledsoff();  WriteLEDs();  EEN;                WriteLEDs();    pulseLEDStart();   delay(waitingtime);   
-  ledsoff();  WriteLEDs();  TWEE;                WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  ledsoff();  WriteLEDs();  DRIE;            WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  ledsoff();  WriteLEDs();  VIER;               WriteLEDs();    pulseLEDStart();   delay(waitingtime);
-  ledsoff();  WriteLEDs();  HVIJF;              WriteLEDs();    pulseLEDStart();   delay(waitingtime);
-  ledsoff();  WriteLEDs();  ZES;                WriteLEDs();    pulseLEDStart();   delay(waitingtime);
-  ledsoff();  WriteLEDs();  ZEVEN;              WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  ledsoff();  WriteLEDs();  ACHT;              WriteLEDs();    pulseLEDStart();   delay(waitingtime);
-  ledsoff();  WriteLEDs();  NEGEN;               WriteLEDs();    pulseLEDStart();   delay(waitingtime);
-  ledsoff();  WriteLEDs();  HTIEN;               WriteLEDs();    pulseLEDStart();   //delay(waitingtime);  
-  //ledsoff();  WriteLEDs();  ELF;             WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  //ledsoff();  WriteLEDs();  TWAALF;             WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  //ledsoff();  WriteLEDs();  MVIJF;OVER;         WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  //ledsoff();  WriteLEDs();  MTIEN;OVER;          WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  //ledsoff();  WriteLEDs();  KWART;OVER;       WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  //ledsoff();  WriteLEDs();  TWENTY;OVER;        WriteLEDs();    pulseLEDStart();   delay(waitingtime);
-  //ledsoff();  WriteLEDs();  TWENTY; MVIJF;OVER;   WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  //ledsoff();  WriteLEDs();  HALF; OVER;           WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  //ledsoff();  WriteLEDs();  TWENTY; MVIJF; VOOR;      WriteLEDs();    pulseLEDStart();   delay(waitingtime);  
-  //ledsoff();  WriteLEDs();  TWENTY; VOOR;           WriteLEDs();    pulseLEDStart();   delay(waitingtime);
-  //ledsoff();  WriteLEDs();  KWART;VOOR;           WriteLEDs();    pulseLEDStart();   delay(waitingtime);
-  //ledsoff();  WriteLEDs();  MTIEN;VOOR;            WriteLEDs();    pulseLEDStart();   delay(waitingtime);
-  //ledsoff();  WriteLEDs();  MVIJF;VOOR;           WriteLEDs();    pulseLEDStart();   delay(waitingtime); 
-
+{  
+    ledsoff();  WriteLEDs();  EEN;          WriteLEDs();  pulseLEDStart();  delay(waitingtime);   
+    ledsoff();  WriteLEDs();  TWEE;         WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+    ledsoff();  WriteLEDs();  DRIE;         WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+    ledsoff();  WriteLEDs();  VIER;         WriteLEDs();  pulseLEDStart();  delay(waitingtime);
+    ledsoff();  WriteLEDs();  HVIJF;        WriteLEDs();  pulseLEDStart();  delay(waitingtime);
+    ledsoff();  WriteLEDs();  ZES;          WriteLEDs();  pulseLEDStart();  delay(waitingtime);
+    ledsoff();  WriteLEDs();  ZEVEN;        WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+    ledsoff();  WriteLEDs();  ACHT;         WriteLEDs();  pulseLEDStart();  delay(waitingtime);
+    ledsoff();  WriteLEDs();  NEGEN;        WriteLEDs();  pulseLEDStart();  delay(waitingtime);
+    ledsoff();  WriteLEDs();  HTIEN;        WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+    ledsoff();  WriteLEDs();  ELF;          WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+    ledsoff();  WriteLEDs();  TWAALF;       WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+  //ledsoff();  WriteLEDs();  MVIJF;OVER;     WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+  //ledsoff();  WriteLEDs();  MTIEN;OVER;     WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+  //ledsoff();  WriteLEDs();  KWART;OVER;     WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+  //ledsoff();  WriteLEDs();  TWENTY;OVER;      WriteLEDs();  pulseLEDStart();  delay(waitingtime);
+  //ledsoff();  WriteLEDs();  TWENTY; MVIJF;OVER; WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+  //ledsoff();  WriteLEDs();  HALF; OVER;     WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+  //ledsoff();  WriteLEDs();  TWENTY; MVIJF; VOOR;  WriteLEDs();  pulseLEDStart();  delay(waitingtime);  
+  //ledsoff();  WriteLEDs();  TWENTY; VOOR;     WriteLEDs();  pulseLEDStart();  delay(waitingtime);
+  //ledsoff();  WriteLEDs();  KWART;VOOR;     WriteLEDs();  pulseLEDStart();  delay(waitingtime);
+  //ledsoff();  WriteLEDs();  MTIEN;VOOR;     WriteLEDs();  pulseLEDStart();  delay(waitingtime);
+  //ledsoff();  WriteLEDs();  MVIJF;VOOR;     WriteLEDs();  pulseLEDStart();  delay(waitingtime); 
 }   
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////
 void pulseLEDeveryMinute()
 {
-  for (float pulse = 10; pulse < 250; pulse *= 1.0002)
+  for (float pulse = 254; pulse > 50; pulse -= 0.0085)
+  {
+    analogWrite(EnablePin, pulse);
+  }
+    for (float pulse = 5; pulse < 254; pulse *= 1.000485)
   {
     analogWrite(EnablePin, pulse);
   }
 
-  for (float pulse = 250; pulse > 200; pulse -= 0.001)
-  {
-    analogWrite(EnablePin, pulse);
-  }
 
 }
 ////////////////////////////////////////////////////////////////////////////////////////
 void pulseLEDButton()
 {
-for (float pulse = 10; pulse < 250; pulse *= 1.0003)
-  {
-    analogWrite(EnablePin, pulse);
-  }
-
-  for (float pulse = 250; pulse > 200; pulse -= 0.004)
+for (float pulse = 10; pulse < 254; pulse *= 1.0003)
   {
     analogWrite(EnablePin, pulse);
   }
@@ -508,15 +472,15 @@ for (float pulse = 10; pulse < 250; pulse *= 1.0003)
 void pulseLEDStart()
 {
 
-   for (float pulse = 10; pulse < 250; pulse *= 1.0005)
+   for (float pulse = 5; pulse < 254; pulse *= 1.000485)
   {
     analogWrite(EnablePin, pulse);
   }
 
-  for (float pulse = 250; pulse > 200; pulse -= 0.005)
+  for (float pulse = 254; pulse > 50; pulse -= 0.0085)
   {
     analogWrite(EnablePin, pulse);
   }
-  
+    
  }
 ////////////////////////////////////////////////////////////////////////////////////////
