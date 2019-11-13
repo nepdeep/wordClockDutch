@@ -360,7 +360,7 @@ int reading2 = digitalRead(REVButtonPin);
    
    if ( (reading2 ==0 )) 
     {
-    minute = (((minute/5)*5) -5); //Current time - 3 minutes (minus)
+    minute = (((minute/5)*5) -3); //Current time - 3 minutes (minus)
     second = 0; 
     if (minute < 0) { 
       minute = 57; 
